@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Code Compiler</title>
+  <style>
+    /* Styling for the layout */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      text-align: center;
+      width: 80%;
+      max-width: 700px;
+    }
+    select, textarea, button, .output {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+    textarea {
+      height: 200px;
+      resize: none;
+    }
+    .output {
+      border: 1px solid #ccc;
+      background-color: #eee;
+      height: 150px;
+      overflow-y: auto;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Online Code Compiler</h2>
+    <select id="language">
+      <option value="0">Python</option>
+      <option value="4">JavaScript</option>
+      <option value="7">C</option>
+      <option value="77">C++</option>
+      <option value="8">Java</option>
+    </select>
+    <textarea id="code-editor" placeholder="Write your code here..."></textarea>
+    <button id="compile-btn">Compile Code</button>
+    <div class="output" id="output-console">Output will be displayed here...</div>
+  </div>
+
+  <script>
+    document.getElementById('compile-btn').addEventListener('click', function() {
+      const code = document.getElementById('code-editor').value;
+      const languageId = document.getElementById('language').value;
+      const outputConsole = document.getElementById('output-console');
+
+      // Clear previous output
+      outputConsole.textContent = "Compiling...";
+
+      
+      fetch('https://codequotient.com/api/executeCode', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: code, langId: languageId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          outputConsole.textContent = "Error: " + data.error;
+        } else {
+          const codeId = data.codeId;
+          let interval = setInterval(() => {
+            fetchResult(codeId, interval);
+          }, 1000);
+        }
+      })
+      .catch(error => {
+        outputConsole.textContent = "Error: " + error.message;
+      });
+    });
+
+    function fetchResult(codeId, interval) {
+      const outputConsole = document.getElementById('output-console');
+
+      fetch(`https://codequotient.com/api/codeResult/${codeId}`)
+        .then(response => response.json())
+        .then(result => {
+          const data = JSON.parse(result.data);
+          if (data && data.output) {
+            outputConsole.textContent = "Output:\n" + data.output;
+            clearInterval(interval);
+          } else if (data && data.errors) {
+            outputConsole.textContent = "Error:\n" + data.errors;
+            clearInterval(interval);
+          }
+        })
+        .catch(error => {
+          outputConsole.textContent = "Error: " + error.message;
+          clearInterval(interval);
+        });
+    }
+  </script>
+</body>
+</html>
